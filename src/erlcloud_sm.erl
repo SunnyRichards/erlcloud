@@ -9,7 +9,9 @@
 
 %%% API
 -export([
-    get_secret_value/2, get_secret_value/3
+    get_secret_value/2, get_secret_value/3,
+    describe_secret/1, describe_secret/2,
+    list_all_secrets/0, list_all_secrets/1, list_all_secrets/2
 ]).
 
 %%%------------------------------------------------------------------------------
@@ -77,6 +79,54 @@ get_secret_value(SecretId, Opts, Config) ->
         [{<<"SecretId">>, SecretId} | Opts]),
     sm_request(Config, "secretsmanager.GetSecretValue", Json).
 
+%%------------------------------------------------------------------------------
+%% DescribeSecrets
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_DescribeSecret.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec describe_secret(SecretId :: binary()) -> sm_response().
+describe_secret(SecretId) ->
+    describe_secret(SecretId, erlcloud_aws:default_config()).
+
+-spec describe_secret(SecretId :: binary(), Config :: aws_config()) -> sm_response().
+describe_secret(SecretId, Config) ->
+    Json = #{<<"SecretId">> => SecretId},
+    sm_request(Config, "secretsmanager.DescribeSecret", Json).
+
+%%------------------------------------------------------------------------------
+%% ListSecrets
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_ListSecrets.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec list_all_secrets() -> sm_response().
+list_all_secrets() ->
+    list_all_secrets(#{}, erlcloud_aws:default_config()).
+
+-spec list_all_secrets(Filters :: map()) -> sm_response().
+list_all_secrets(Filters) ->
+    list_all_secrets(Filters, erlcloud_aws:default_config()).
+
+-spec list_all_secrets(Filters :: map(), Config :: aws_config()) -> sm_response().
+list_all_secrets(Filters, Config) ->
+    Json = lists:map(
+        fun
+            ({filters, Val}) -> {<<"Filters">>, Val};
+            ({max_results, Val}) -> {<<"MaxResults">>, Val};
+            ({next_token, Val}) -> {<<"NextToken">>, Val};
+            ({sort_order, Val}) -> {<<"SortOrder">>, Val};
+
+            (Other) -> Other
+        end, [Filters]),
+    sm_request(Config, "secretsmanager.ListSecrets", Json).
+
 %%%------------------------------------------------------------------------------
 %%% Internal Functions
 %%%------------------------------------------------------------------------------
@@ -89,7 +139,8 @@ sm_request(Config, Operation, Body) ->
             {error, Reason}
     end.
 
-
+sm_request_no_update(Config, Operation, [#{}]) ->
+    sm_request_no_update(Config, Operation, #{});
 sm_request_no_update(Config, Operation, Body) ->
     Payload = jsx:encode(Body),
     Headers = headers(Config, Operation, Payload),
