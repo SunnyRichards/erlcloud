@@ -13,7 +13,9 @@
     describe_secret/1, describe_secret/2,
     list_all_secrets/0, list_all_secrets/1, list_all_secrets/2,
     list_secret_version_ids/2, list_secret_version_ids/3,
-    delete_secret/2,  delete_secret/3
+    delete_secret/2,  delete_secret/3,
+    restore_secret/1,  restore_secret/2,
+    update_secret/2
     ]).
 
 %%%------------------------------------------------------------------------------
@@ -180,6 +182,53 @@ delete_secret(SecretId, Opts, Config) ->
         end,
         [{<<"SecretId">>, SecretId} | Opts]),
     sm_request(Config, "secretsmanager.DeleteSecret", Json).
+
+%%------------------------------------------------------------------------------
+%% RestoreSecret
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_RestoreSecret.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec restore_secret(SecretId :: binary()) -> sm_response().
+restore_secret(SecretId) ->
+    get_secret_value(SecretId, erlcloud_aws:default_config()).
+
+
+-spec restore_secret(SecretId :: binary(), Config :: aws_config()) -> sm_response().
+restore_secret(SecretId, Config) ->
+    Json = #{<<"SecretId">> => SecretId},
+    sm_request(Config, "secretsmanager.RestoreSecret", Json).
+
+%%------------------------------------------------------------------------------
+%% UpdateSecret
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_UpdateSecret.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec update_secret(SecretId :: binary(), Opts :: get_secret_value_options()) -> sm_response().
+update_secret(SecretId, Opts) ->
+    update_secret(SecretId, Opts, erlcloud_aws:default_config()).
+
+-spec update_secret(SecretId :: binary(), Opts :: get_secret_value_options(),
+    Config :: aws_config()) -> sm_response().
+update_secret(SecretId, Opts, Config) ->
+    Json = lists:map(
+        fun
+            ({kms_key_id, Val}) -> {<<"KmsKeyId">>, Val};
+            ({description, Val}) -> {<<"Description">>, Val};
+            ({secret_bin, Val}) -> {<<"SecretBinary">>, Val};
+            ({secret_string, Val}) -> {<<"SecretString">>, Val};
+            ({request_token, Val}) -> {<<"ClientRequestToken">>, Val};
+            (Other) -> Other
+        end,
+        [{<<"SecretId">>, SecretId} | Opts]),
+    sm_request(Config, "secretsmanager.UpdateSecret", Json).
 
 %%%------------------------------------------------------------------------------
 %%% Internal Functions
