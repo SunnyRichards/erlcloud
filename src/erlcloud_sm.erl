@@ -11,8 +11,10 @@
 -export([
     get_secret_value/2, get_secret_value/3,
     describe_secret/1, describe_secret/2,
-    list_all_secrets/0, list_all_secrets/1, list_all_secrets/2
-]).
+    list_all_secrets/0, list_all_secrets/1, list_all_secrets/2,
+    list_secret_version_ids/2, list_secret_version_ids/3,
+    delete_secret/2,  delete_secret/3
+    ]).
 
 %%%------------------------------------------------------------------------------
 %%% Shared types
@@ -126,6 +128,58 @@ list_all_secrets(Filters, Config) ->
             (Other) -> Other
         end, [Filters]),
     sm_request(Config, "secretsmanager.ListSecrets", Json).
+
+%%------------------------------------------------------------------------------
+%% ListSecretVersionIds
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_ListSecretVersionIds.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec list_secret_version_ids(SecretId :: binary(), Opts :: get_secret_value_options()) -> sm_response().
+list_secret_version_ids(SecretId, Opts) ->
+    list_secret_version_ids(SecretId, Opts, erlcloud_aws:default_config()).
+
+-spec list_secret_version_ids(SecretId :: binary(), Opts :: get_secret_value_options(),
+    Config :: aws_config()) -> sm_response().
+list_secret_version_ids(SecretId, Opts, Config) ->
+    Json = lists:map(
+        fun
+            ({max_results, Val}) -> {<<"MaxResults">>, Val};
+            ({next_token, Val}) -> {<<"NextToken">>, Val};
+            ({sort_order, Val}) -> {<<"SortOrder">>, Val};
+            (Other) -> Other
+        end,
+        [{<<"SecretId">>, SecretId} | Opts]),
+    sm_request(Config, "secretsmanager.ListSecretVersionIds", Json).
+
+%%------------------------------------------------------------------------------
+%% DeleteSecret
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_DeleteSecret.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec delete_secret(SecretId :: binary(), Opts :: get_secret_value_options()) -> sm_response().
+delete_secret(SecretId, Opts) ->
+    get_secret_value(SecretId, Opts, erlcloud_aws:default_config()).
+
+
+-spec delete_secret(SecretId :: binary(), Opts :: get_secret_value_options(),
+    Config :: aws_config()) -> sm_response().
+delete_secret(SecretId, Opts, Config) ->
+    Json = lists:map(
+        fun
+            ({force_delete, Val}) -> {<<"ForceDeleteWithoutRecovery">>, Val};
+            ({recovery_window, Val}) -> {<<"RecoveryWindowInDays">>, Val};
+            (Other) -> Other
+        end,
+        [{<<"SecretId">>, SecretId} | Opts]),
+    sm_request(Config, "secretsmanager.DeleteSecret", Json).
 
 %%%------------------------------------------------------------------------------
 %%% Internal Functions
