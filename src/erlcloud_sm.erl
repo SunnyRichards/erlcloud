@@ -15,7 +15,9 @@
     list_secret_version_ids/2, list_secret_version_ids/3,
     delete_secret/2,  delete_secret/3,
     restore_secret/1,  restore_secret/2,
-    update_secret/2
+    update_secret/2, update_secret/3,
+    tag_resource/2, tag_resource/3,
+    untag_resource/2, untag_resource/3
     ]).
 
 %%%------------------------------------------------------------------------------
@@ -168,7 +170,7 @@ list_secret_version_ids(SecretId, Opts, Config) ->
 
 -spec delete_secret(SecretId :: binary(), Opts :: get_secret_value_options()) -> sm_response().
 delete_secret(SecretId, Opts) ->
-    get_secret_value(SecretId, Opts, erlcloud_aws:default_config()).
+    delete_secret(SecretId, Opts, erlcloud_aws:default_config()).
 
 
 -spec delete_secret(SecretId :: binary(), Opts :: get_secret_value_options(),
@@ -194,7 +196,7 @@ delete_secret(SecretId, Opts, Config) ->
 
 -spec restore_secret(SecretId :: binary()) -> sm_response().
 restore_secret(SecretId) ->
-    get_secret_value(SecretId, erlcloud_aws:default_config()).
+    restore_secret(SecretId, erlcloud_aws:default_config()).
 
 
 -spec restore_secret(SecretId :: binary(), Config :: aws_config()) -> sm_response().
@@ -229,6 +231,44 @@ update_secret(SecretId, Opts, Config) ->
         end,
         [{<<"SecretId">>, SecretId} | Opts]),
     sm_request(Config, "secretsmanager.UpdateSecret", Json).
+
+%%------------------------------------------------------------------------------
+%% TagResource
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_TagResource.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec tag_resource(SecretId :: binary(), Opts :: get_secret_value_options()) -> sm_response().
+tag_resource(SecretId, Opts) ->
+    tag_resource(SecretId, Opts, erlcloud_aws:default_config()).
+
+-spec tag_resource(SecretId :: binary(), Opts :: get_secret_value_options(),
+    Config :: aws_config()) -> sm_response().
+tag_resource(SecretId, Opts, Config) ->
+    Json = [{<<"SecretId">>, SecretId}, {<<"Tags">>, Opts}],
+    sm_request(Config, "secretsmanager.TagResource", Json).
+
+%%------------------------------------------------------------------------------
+%% UntagResource
+%%------------------------------------------------------------------------------
+%% @doc
+%% SM API:
+%% [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_UntagResource.html]
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec untag_resource(SecretId :: binary(), Opts :: get_secret_value_options()) -> sm_response().
+untag_resource(SecretId, Opts) ->
+    untag_resource(SecretId, Opts, erlcloud_aws:default_config()).
+
+-spec untag_resource(SecretId :: binary(), Opts :: get_secret_value_options(),
+    Config :: aws_config()) -> sm_response().
+untag_resource(SecretId, Opts, Config) ->
+    Json = [{<<"SecretId">>, SecretId}, {<<"TagKeys">>, Opts}],
+    sm_request(Config, "secretsmanager.UntagResource", Json).
 
 %%%------------------------------------------------------------------------------
 %%% Internal Functions
