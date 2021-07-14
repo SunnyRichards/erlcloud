@@ -248,7 +248,7 @@ tag_resource(SecretId, Opts) ->
 -spec tag_resource(SecretId :: binary(), Opts :: get_secret_value_options(),
     Config :: aws_config()) -> sm_response().
 tag_resource(SecretId, Opts, Config) ->
-    Json = [{<<"SecretId">>, SecretId}, {<<"Tags">>, Opts}],
+    Json = #{<<"SecretId">> => SecretId, <<"Tags">> => [maps:from_list(Opts)]},
     sm_request(Config, "secretsmanager.TagResource", Json).
 
 %%------------------------------------------------------------------------------
@@ -267,7 +267,7 @@ untag_resource(SecretId, Opts) ->
 -spec untag_resource(SecretId :: binary(), Opts :: get_secret_value_options(),
     Config :: aws_config()) -> sm_response().
 untag_resource(SecretId, Opts, Config) ->
-    Json = [{<<"SecretId">>, SecretId}, {<<"TagKeys">>, Opts}],
+    Json = #{<<"SecretId">> => SecretId, <<"TagKeys">> => Opts},
     sm_request(Config, "secretsmanager.UntagResource", Json).
 
 %%%------------------------------------------------------------------------------
